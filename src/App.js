@@ -1,52 +1,71 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import WeatherBox from './component/WeatherBox';
 import WeatherButton from './component/WeatherButton';
-
-const locationData = {
-  mokpo: { lat: 34.8026707, lon: 126.3890790 },
-  busan: { lat: 35.1766073, lon: 129.0723681 },
-};
+import ClipLoader from "react-spinners/ClipLoader";
 
 function App() {
-
   const [weather, setWeather] = useState(null);
+  const [city, setCity] = useState("");
+  const [loading, setLoading] = useState(false);
+  const cities = ['paris', 'new york', 'tokyo', 'seoul'];
 
   const getCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition((position) => {
       let lat = position.coords.latitude;
       let lon = position.coords.longitude;
-      console.log("lat: ", lat, ", lon: ", lon);
       getWeatherByCurrentLocation(lat, lon);
     });
   };
 
   const getWeatherByCurrentLocation = async (lat, lon) => {
     let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=7848d4ed5bc3eed817b3c414905bbad5&units=metric`;
+    setLoading(true);
     let response = await fetch(url);
     let data = await response.json();
-    console.log("data: ", data)
     setWeather(data);
+    setLoading(false);
+  };
+
+  const getWeatherByCity = async () => {
+    let url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=7848d4ed5bc3eed817b3c414905bbad5&units=metric`
+    setLoading(true);
+    let response = await fetch(url);
+    let data = await response.json();
+    setWeather(data);
+    setLoading(false);
   };
 
   useEffect(() => {
-    getCurrentLocation();
-  }, []);
-
-  const getOtherLocation = (location) => {
-    getWeatherByCurrentLocation(locationData[location].lat, locationData[location].lon);
-  };
+    if (city == "" | city == "current") {
+      getCurrentLocation();
+    } else {
+      getWeatherByCity();
+    };
+  }, [city]);
 
   return (
     <div>
-      <div className='container'>
-        <WeatherBox weather={weather} />
-        <WeatherButton
-          getCurrentLocation={getCurrentLocation}
-          getOtherLocation={getOtherLocation}
-        />
-      </div>
+      {loading ? (
+        <div className='container'>
+          <ClipLoader
+            color="#f88c6b"
+            loading={loading}
+            size={150}
+          />
+        </div>
+      ) : (
+        <div className='container'>
+          <WeatherBox weather={weather} />
+          <WeatherButton
+            city={city}
+            cities={cities}
+            setCity={setCity}
+          />
+        </div>
+      )
+      }
     </div>
   );
 }
